@@ -138,6 +138,6 @@ if __name__ == "__main__":
     print(DATA_FOLDER)
     main_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"
     papers = find_all_citations(main_paper_id, delay=0.1)
-    print(f"\nЗбереження інформації про {len(papers)} пейперів.")
+    print(f"\nSaving information about {len(papers)} papers.")
     save_papers_to_csv(papers, ARXIV_ID_PATH)
-    print("Дані збережено у файл 'data/arxiv_ids.csv'. Прогрес збережено.")
+    print("Data saved to 'data/arxiv_ids.csv'. Progress saved.")
