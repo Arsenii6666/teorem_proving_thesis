@@ -14,12 +14,12 @@ VISITED_PATH: Final = DATA_FOLDER / "visited.txt"
 
 @dataclass
 class Paper:
+    paper_id: str
     arxiv_id: str | None
     authors: list[dict]
     doi: str | None
     intent: list[str]
     is_influential: bool
-    paper_id: str
     title: str
     url: str | None
     venue: str | None
@@ -34,12 +34,12 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
         citations_data = data.get("citations", [])
         citations = [
             Paper(
+                paper_id=citation["paperId"],
                 arxiv_id=citation.get("arxivId"),
                 authors=citation.get("authors", []),
                 doi=citation.get("doi"),
                 intent=citation.get("intent", []),
                 is_influential=citation.get("isInfluential", False),
-                paper_id=citation["paperId"],
                 title=citation.get("title", ""),
                 url=citation.get("url"),
                 venue=citation.get("venue", ""),
@@ -56,13 +56,13 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
         return []
 
 
-def save_queue(queue, filename=QUEUE_PATH):
+def save_queue(queue: deque, filename: Path = QUEUE_PATH) -> None:
     with open(filename, "w") as file:
         for paper_id, depth in queue:
             file.write(f"{paper_id},{depth}\n")
 
 
-def load_queue(filename=QUEUE_PATH):
+def load_queue(filename: Path = QUEUE_PATH) -> deque:
     if filename.exists():
         with open(filename, "r") as file:
             queue = deque()
@@ -73,13 +73,13 @@ def load_queue(filename=QUEUE_PATH):
     return deque()
 
 
-def save_visited(visited_papers, filename=VISITED_PATH):
+def save_visited(visited_papers: set[str], filename: Path = VISITED_PATH) -> None:
     with filename.open("w") as file:
         for paper_id in visited_papers:
             file.write(f"{paper_id}\n")
 
 
-def load_visited(filename=VISITED_PATH):
+def load_visited(filename: Path = VISITED_PATH) -> set[str]:
     visited_papers = set()
     if filename.exists():
         with open(filename, "r") as file:
@@ -89,8 +89,11 @@ def load_visited(filename=VISITED_PATH):
 
 
 def find_all_citations(
-    paper_id: str, delay, queue_file=QUEUE_PATH, visited_file=VISITED_PATH
-):
+    paper_id: str,
+    delay: float,
+    queue_file: Path = QUEUE_PATH,
+    visited_file: Path = VISITED_PATH,
+) -> list[Paper]:
     papers = []
 
     queue = load_queue(queue_file)
@@ -126,7 +129,7 @@ def find_all_citations(
     return papers
 
 
-def save_papers_to_csv(papers: list[Paper], filename=ARXIV_ID_PATH):
+def save_papers_to_csv(papers: list[Paper], filename: Path = ARXIV_ID_PATH) -> None:
     df = pd.DataFrame(papers)
     df.to_csv(filename, mode="a")
 
