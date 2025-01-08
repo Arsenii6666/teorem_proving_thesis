@@ -1,4 +1,3 @@
-import os
 import requests
 import time
 from collections import deque
@@ -7,7 +6,7 @@ from dataclasses import dataclass
 from typing import Final
 from pathlib import Path
 
-DATA_FOLDER: Final = Path(__file__).parent / "data"
+DATA_FOLDER: Final = Path(__file__).parent.parent / "data"
 ARXIV_ID_PATH: Final = DATA_FOLDER / "arxiv_ids.csv"
 QUEUE_PATH: Final = DATA_FOLDER / "queue.txt"
 VISITED_PATH: Final = DATA_FOLDER / "visited.txt"
@@ -53,13 +52,13 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
         print(f"Error: {response.status_code} for Paper ID: {paper_id}")
         return []
 
-def save_queue(queue, filename="data/queue.txt"):
+def save_queue(queue, filename=QUEUE_PATH):
     with open(filename, 'w') as file:
         for paper_id, depth in queue:
             file.write(f"{paper_id},{depth}\n")
 
-def load_queue(filename="data/queue.txt"):
-    if os.path.exists(filename):
+def load_queue(filename=QUEUE_PATH):
+    if filename.exists():
         with open(filename, 'r') as file:
             queue = deque()
             for line in file:
@@ -68,7 +67,7 @@ def load_queue(filename="data/queue.txt"):
             return queue
     return deque()
 
-def save_visited(visited_papers, arxiv_ids, filename="data/visited.txt"):
+def save_visited(visited_papers, arxiv_ids, filename=VISITED_PATH):
     with open(filename, 'w') as file:
         for paper_id in visited_papers:
             file.write(f"{paper_id}\n")
@@ -76,10 +75,10 @@ def save_visited(visited_papers, arxiv_ids, filename="data/visited.txt"):
         for arxiv_id in arxiv_ids:
             file.write(f"{arxiv_id}\n")
 
-def load_visited(filename="data/visited.txt"):
+def load_visited(filename=VISITED_PATH):
     visited_papers = set()
     arxiv_ids = set()
-    if os.path.exists(filename):
+    if filename.exists():
         with open(filename, 'r') as file:
             lines = file.readlines()
             separator = lines.index('---\n')
@@ -87,7 +86,7 @@ def load_visited(filename="data/visited.txt"):
             arxiv_ids = set(line.strip() for line in lines[separator+1:])
     return visited_papers, arxiv_ids
 
-def find_all_citations(paper_id: str, delay, queue_file, visited_file):
+def find_all_citations(paper_id: str, delay, queue_file=QUEUE_PATH, visited_file=VISITED_PATH):
     papers = []
 
     queue = load_queue(queue_file)
@@ -124,8 +123,8 @@ def find_all_citations(paper_id: str, delay, queue_file, visited_file):
     save_visited(visited_papers, arxiv_ids, visited_file)
     return papers
 
-def save_papers_to_csv(papers: List[Paper], filename="data/arxiv_ids.csv"):
-    if not os.path.exists(filename):
+def save_papers_to_csv(papers: list[Paper], filename=ARXIV_ID_PATH):
+    if not filename.exists():
         with open(filename, mode="w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["arxiv_id", "authors", "doi", "intent", "is_influential", "paper_id", "title", "url", "venue", "year"])
@@ -135,9 +134,9 @@ def save_papers_to_csv(papers: List[Paper], filename="data/arxiv_ids.csv"):
             authors = ", ".join([author['name'] for author in paper.authors])
             writer.writerow([paper.arxiv_id, authors, paper.doi, "; ".join(paper.intent), paper.is_influential, paper.paper_id, paper.title, paper.url, paper.venue, paper.year])
 
-def load_existing_papers(filename="data\\arxiv_ids.csv"):
+def load_existing_papers(filename=ARXIV_ID_PATH):
     existing_papers = set()
-    if os.path.exists(filename):
+    if filename.exists():
         with open(filename, mode="r") as file:
             reader = csv.reader(file)
             next(reader)
@@ -146,10 +145,11 @@ def load_existing_papers(filename="data\\arxiv_ids.csv"):
     return existing_papers
 
 if __name__=="__main__":
+    print(DATA_FOLDER)
     main_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"
-    existing_papers = load_existing_papers(arxiv_id_path)
-    papers = find_all_citations(main_paper_id, delay=0.1,)
+    existing_papers = load_existing_papers(ARXIV_ID_PATH)
+    papers = find_all_citations(main_paper_id, delay=0.1)
     print(f"\nЗбереження інформації про {len(papers)} пейперів.")
-    save_papers_to_csv(papers, arxiv_id_path)
+    save_papers_to_csv(papers, ARXIV_ID_PATH)
     print("Дані збережено у файл 'data/arxiv_ids.csv'. Прогрес збережено.")
 
