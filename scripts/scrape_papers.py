@@ -17,7 +17,7 @@ VISITED_PATH: Final = DATA_FOLDER / "visited.txt"
 class Paper:
     paper_id: str
     arxiv_id: str | None
-    authors: list[dict]
+    authors: list[dict[str, str]]
     doi: str | None
     intent: list[str]
     is_influential: bool
@@ -56,21 +56,20 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
     return []
 
 
-def save_queue(queue: deque, filename: Path = QUEUE_PATH) -> None:
+def save_queue(queue: deque[tuple[str, int]], filename: Path = QUEUE_PATH) -> None:
     with filename.open("w") as file:
         for paper_id, depth in queue:
             file.write(f"{paper_id},{depth}\n")
 
 
-def load_queue(filename: Path = QUEUE_PATH) -> deque:
+def load_queue(filename: Path = QUEUE_PATH) -> deque[tuple[str, int]]:
+    queue: deque[tuple[str, int]] = deque()
     if filename.exists():
         with filename.open() as file:
-            queue = deque()
             for line in file:
                 paper_id, depth = line.strip().split(",")
                 queue.append((paper_id, int(depth)))
-            return queue
-    return deque()
+    return queue
 
 
 def save_visited(visited_papers: set[str], filename: Path = VISITED_PATH) -> None:
