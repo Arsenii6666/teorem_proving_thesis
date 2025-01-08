@@ -1,10 +1,11 @@
-import requests
 import time
 from collections import deque
-import pandas as pd
 from dataclasses import dataclass
-from typing import Final
 from pathlib import Path
+from typing import Final
+
+import pandas as pd
+import requests
 
 DATA_FOLDER: Final = Path(__file__).parent.parent / "data"
 ARXIV_ID_PATH: Final = DATA_FOLDER / "arxiv_ids.csv"
@@ -48,12 +49,11 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
             for citation in citations_data
         ]
         return citations
-    elif response.status_code == 429:
+    if response.status_code == 429:
         print(f"Rate limit exceeded for Paper ID: {paper_id}. Exiting.")
         return []
-    else:
-        print(f"Error: {response.status_code} for Paper ID: {paper_id}")
-        return []
+    print(f"Error: {response.status_code} for Paper ID: {paper_id}")
+    return []
 
 
 def save_queue(queue: deque, filename: Path = QUEUE_PATH) -> None:
@@ -64,7 +64,7 @@ def save_queue(queue: deque, filename: Path = QUEUE_PATH) -> None:
 
 def load_queue(filename: Path = QUEUE_PATH) -> deque:
     if filename.exists():
-        with open(filename, "r") as file:
+        with open(filename) as file:
             queue = deque()
             for line in file:
                 paper_id, depth = line.strip().split(",")
@@ -82,7 +82,7 @@ def save_visited(visited_papers: set[str], filename: Path = VISITED_PATH) -> Non
 def load_visited(filename: Path = VISITED_PATH) -> set[str]:
     visited_papers = set()
     if filename.exists():
-        with open(filename, "r") as file:
+        with open(filename) as file:
             lines = file.readlines()
             visited_papers = set(line.strip() for line in lines)
     return visited_papers
