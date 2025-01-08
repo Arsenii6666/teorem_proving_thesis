@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from typing import Final
 import pandas as pd
 import requests
 
+logger = logging.getLogger(__name__)
 DATA_FOLDER: Final = Path(__file__).parent.parent / "data"
 ARXIV_ID_PATH: Final = DATA_FOLDER / "arxiv_ids.csv"
 QUEUE_PATH: Final = DATA_FOLDER / "queue.txt"
@@ -29,7 +31,7 @@ class Paper:
 
 def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
     url = f"https://api.semanticscholar.org/v1/paper/{paper_id}"
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     if response.status_code == requests.codes.OK:
         data = response.json()
         citations_data = data.get("citations", [])
@@ -50,9 +52,9 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
         ]
         return citations
     if response.status_code == requests.codes.TOO_MANY_REQUESTS:
-        print(f"Rate limit exceeded for Paper ID: {paper_id}. Exiting.")
+        logger.error(f"Rate limit exceeded for Paper ID: {paper_id}. Exiting.")
         return []
-    print(f"Error: {response.status_code} for Paper ID: {paper_id}")
+    logger.error(f"Error: {response.status_code} for Paper ID: {paper_id}")
     return []
 
 
@@ -108,7 +110,7 @@ def find_all_citations(
                 continue
             visited_papers.add(current_paper_id)
             citations = get_citations_from_semantic_scholar(current_paper_id)
-            print(f"Depth: {depth}, Unique ArXiv IDs found: {len(visited_papers)}")
+            logger.info(f"Depth: {depth}, Unique ArXiv IDs found: {len(visited_papers)}")
             for citation in citations:
                 citation_id = citation.paper_id
                 papers.append(citation)
@@ -116,7 +118,7 @@ def find_all_citations(
                     queue.append((citation_id, depth + 1))
             time.sleep(delay)
     except KeyboardInterrupt:
-        print("\nProcess interrupted. Progress saved.")
+        logger.info("\nProcess interrupted. Progress saved.")
         save_queue(queue, queue_file)
         save_visited(visited_papers, visited_file)
         return papers
@@ -132,9 +134,8 @@ def save_papers_to_csv(papers: list[Paper], filename: Path = ARXIV_ID_PATH) -> N
 
 
 if __name__ == "__main__":
-    print(DATA_FOLDER)
     main_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"
     papers = find_all_citations(main_paper_id, delay=0.1)
-    print(f"\nSaving information about {len(papers)} papers.")
+    logger.info(f"\nSaving information about {len(papers)} papers.")
     save_papers_to_csv(papers, ARXIV_ID_PATH)
-    print("Data saved to 'data/arxiv_ids.csv'. Progress saved.")
+    logger.info("Data saved to 'data/arxiv_ids.csv'. Progress saved.")
