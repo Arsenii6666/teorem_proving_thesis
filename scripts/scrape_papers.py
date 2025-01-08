@@ -30,7 +30,7 @@ class Paper:
 def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
     url = f"https://api.semanticscholar.org/v1/paper/{paper_id}"
     response = requests.get(url)
-    if response.status_code == 200:
+    if response.status_code == requests.codes.OK:
         data = response.json()
         citations_data = data.get("citations", [])
         citations = [
@@ -49,7 +49,7 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
             for citation in citations_data
         ]
         return citations
-    if response.status_code == 429:
+    if response.status_code == requests.codes.TOO_MANY_REQUESTS:
         print(f"Rate limit exceeded for Paper ID: {paper_id}. Exiting.")
         return []
     print(f"Error: {response.status_code} for Paper ID: {paper_id}")
@@ -57,14 +57,14 @@ def get_citations_from_semantic_scholar(paper_id: str) -> list[Paper]:
 
 
 def save_queue(queue: deque, filename: Path = QUEUE_PATH) -> None:
-    with open(filename, "w") as file:
+    with filename.open("w") as file:
         for paper_id, depth in queue:
             file.write(f"{paper_id},{depth}\n")
 
 
 def load_queue(filename: Path = QUEUE_PATH) -> deque:
     if filename.exists():
-        with open(filename) as file:
+        with filename.open() as file:
             queue = deque()
             for line in file:
                 paper_id, depth = line.strip().split(",")
@@ -82,9 +82,9 @@ def save_visited(visited_papers: set[str], filename: Path = VISITED_PATH) -> Non
 def load_visited(filename: Path = VISITED_PATH) -> set[str]:
     visited_papers = set()
     if filename.exists():
-        with open(filename) as file:
+        with filename.open() as file:
             lines = file.readlines()
-            visited_papers = set(line.strip() for line in lines)
+            visited_papers = {line.strip() for line in lines}
     return visited_papers
 
 
@@ -130,8 +130,8 @@ def find_all_citations(
 
 
 def save_papers_to_csv(papers: list[Paper], filename: Path = ARXIV_ID_PATH) -> None:
-    df = pd.DataFrame(papers)
-    df.to_csv(filename, mode="a")
+    papers_df = pd.DataFrame(papers)
+    papers_df.to_csv(filename, mode="a")
 
 
 if __name__ == "__main__":
