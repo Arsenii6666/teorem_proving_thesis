@@ -108,8 +108,6 @@ def find_all_citations(
                 continue
             visited_papers.add(current_paper_id)
             citations = get_citations_from_semantic_scholar(current_paper_id)
-            if citations is None:
-                break
             print(f"Depth: {depth}, Unique ArXiv IDs found: {len(visited_papers)}")
             for citation in citations:
                 citation_id = citation.paper_id
