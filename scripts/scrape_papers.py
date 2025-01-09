@@ -44,11 +44,11 @@ EXTRA_FIELDS: Final = [
 
 def custom_id_deserializer(entry: list[str] | str | list[dict[str, str | None]]) -> list[str]:
     if isinstance(entry, list):
-        if all(isinstance(idx, str) for idx in entry):
-            ids = cast(list[str], entry)
-        elif all(isinstance(idx, dict) for idx in entry):  # all dict
+        if all(isinstance(idx, dict) for idx in entry):
             entry = cast(list[dict[str, str | None]], entry)
             ids: list[str] = [value for d in entry if (value := next(iter(d.values()))) is not None]
+        elif all(isinstance(idx, str) for idx in entry):
+            ids = cast(list[str], entry)
         else:
             raise ValueError(f"Mixed type of entry {entry}")
     elif isinstance(entry, str):
