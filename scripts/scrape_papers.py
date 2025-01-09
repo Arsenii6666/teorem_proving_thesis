@@ -179,8 +179,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             for citation_id in paper_metadata.citations_ids
         }
 
-        new_papers_ids = candidate_papers_ids - processed_papers_ids - set(papers_ids)
-        papers_ids = list(new_papers_ids)
+        papers_ids = list(candidate_papers_ids - processed_papers_ids)
         depth += 1
         # TODO: debug
         if depth > 2:
