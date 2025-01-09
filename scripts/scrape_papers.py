@@ -8,6 +8,8 @@ from datetime import date
 
 import pandas as pd
 import requests
+from requests import Session
+from requests.adapters import HTTPAdapter, Retry
 from pydantic import BaseModel, Field, model_validator
 
 from typing import Any
@@ -102,11 +104,18 @@ class PaperMetadata(BaseModel):
         return data | processed_fields
 
 
+# TODO: cleanup
 def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[PaperMetadata]:
     batch_endpoint = "https://api.semanticscholar.org/graph/v1/paper/batch"
-
-    # TODO: make a proper retry
-    response = requests.post(batch_endpoint, params={"fields": ",".join(EXTRA_FIELDS)}, json={"ids": paper_ids}, timeout=10)
+    with Session() as session:
+        retries = Retry(
+            total=15,
+            backoff_factor=2.0,
+            status_forcelist=[429, 500, 502, 503, 504],
+            raise_on_status=False,
+        )
+        session.mount("https://", HTTPAdapter(max_retries=retries))
+        response = session.post(batch_endpoint, params={"fields": ",".join(EXTRA_FIELDS)}, json={"ids": paper_ids}, timeout=10)
     if response.status_code == requests.codes.OK:
         data = response.json()
         papers_metadata = [PaperMetadata(**entry) for entry in data]
