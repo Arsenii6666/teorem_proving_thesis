@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 from collections import deque
 from datetime import date
 from itertools import batched
@@ -11,8 +12,6 @@ from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PlainValidat
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 from tqdm.auto import tqdm
-
-import sqlite3
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -123,7 +122,7 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
     batch_endpoint = "https://api.semanticscholar.org/graph/v1/paper/batch"
     with Session() as session:
         # Semantic Scholar asks to be considerate and use exponential backoff
-        session.hooks["response"] = lambda r, *args, **kwargs: r.raise_for_status()
+        session.hooks["response"] = lambda r, *_, **__: r.raise_for_status()
         retries = Retry(
             total=15,
             backoff_factor=10.0,
