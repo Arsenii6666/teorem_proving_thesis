@@ -4,13 +4,13 @@ from datetime import date
 from itertools import batched
 from pathlib import Path
 from typing import Annotated, Any, Final, cast
-from tqdm.auto import tqdm
 
 import pandas as pd
 import requests
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PlainValidator, model_validator
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
+from tqdm.auto import tqdm
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
