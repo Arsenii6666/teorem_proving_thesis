@@ -118,10 +118,11 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
     with Session() as session:
         retries = Retry(
             total=15,
-            backoff_factor=2.0,
+            backoff_factor=5.0,
             status_forcelist=[429, 500, 502, 503, 504],
             raise_on_status=False,
         )
+        session.mount("http://", HTTPAdapter(max_retries=retries))
         session.mount("https://", HTTPAdapter(max_retries=retries))
         response = session.post(
             batch_endpoint,
@@ -166,11 +167,13 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             for paper_metadata in papers_metadata_batch
             for citation_id in paper_metadata.citations_ids
         }
+        # TODO: can both differences be done at once?
         new_papers_ids = candidate_papers_ids.difference(processed_papers_ids).difference(
             papers_ids_queue
         )
         papers_ids_queue = deque(new_papers_ids)
         depth += 1
+        # TODO: better informing
         logger.info(
             f"There are {len(papers_ids_queue)} unseen papers at the depth {depth}. Processing..."
         )
@@ -183,4 +186,4 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
 if __name__ == "__main__":
     origin_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"  # LeanDojo
     papers_metadata = get_citations_graph(origin_paper_id)
-    papers_metadata
+    print(len(papers_metadata))
