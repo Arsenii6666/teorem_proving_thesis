@@ -139,11 +139,8 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
         data = response.json()
         papers_metadata = [PaperMetadata(**entry) for entry in data]
         return papers_metadata
-    if response.status_code == requests.codes.TOO_MANY_REQUESTS:
-        logger.error("Rate limit exceeded. Exiting.")
-        return []
-    logger.error(f"Error: {response.status_code}.")
-    return []
+    else:
+        raise RuntimeError(f"Retrieval failed with code: {response.status_code}")
 
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
