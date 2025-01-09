@@ -4,10 +4,11 @@ from collections import deque
 from datetime import date
 from itertools import batched
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Annotated, Final, cast
+
 
 import requests
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, model_validator, PlainValidator
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 
@@ -41,16 +42,35 @@ EXTRA_FIELDS: Final = [
     "tldr",  # model, text
 ]
 
+def custom_id_deserializer(entry: list[str] | str | list[dict[str, str | None]]) -> list[str]:
+    if isinstance(entry, list):
+        if all(isinstance(idx, str) for idx in entry):
+            ids = cast(list[str], entry)
+        elif all(isinstance(idx, dict) for idx in entry):  # all dict
+            entry = cast(list[dict[str, str | None]], entry)
+            ids: list[str] = [value for d in entry if (value := next(iter(d.values()))) is not None]
+        else:
+            raise ValueError(f"Mixed type of entry {entry}")
+    elif isinstance(entry, str):
+        ids = entry.split(",")
+    else:
+        raise ValueError(f"Unsupported type of entry {type(entry)}")
+    return ids
+
+
+SerializableStrList = Annotated[list[str], PlainSerializer(lambda x: ",".join(x)), PlainValidator(custom_id_deserializer)]
 
 class PaperMetadata(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     paper_id: str = Field(alias="paperId")
     title: str
     arxiv_id: str | None  # from externalIds
-    authors_ids: list[str]
+    authors_ids: SerializableStrList = Field(alias="authors")
     citation_count: int = Field(alias="citationCount")
     reference_count: int = Field(alias="referenceCount")
-    citations_ids: list[str]
-    references_ids: list[str]
+    citations_ids: SerializableStrList = Field(alias="citations")
+    references_ids: SerializableStrList = Field(alias="references")
     publication_date: date | None = Field(alias="publicationDate")
     influential_citation_count: int = Field(alias="influentialCitationCount")
     is_open_access: bool = Field(alias="isOpenAccess")
@@ -62,54 +82,29 @@ class PaperMetadata(BaseModel):
     @classmethod
     def preprocess(cls, data: dict[str, Any]) -> dict[str, Any]:
         # extract arxiv_id
-        external_ids: dict[str, str] = data["externalIds"]
-        arxiv_id = external_ids.get("ArXiv")
-
-        # flatten authors
-        authors: list[dict[str, str | None]] = data["authors"]
-        authors_ids: list[str] = [
-            author_id["authorId"] for author_id in authors if author_id["authorId"] is not None
-        ]
-
-        # flatten citations
-        citations: list[dict[str, str | None]] = data["citations"]
-        citations_ids = [
-            citation_id["paperId"]
-            for citation_id in citations
-            if citation_id["paperId"] is not None
-        ]
-
-        # flatten references
-        references: list[dict[str, str | None]] = data["references"]
-        references_ids = [
-            reference_id["paperId"]
-            for reference_id in references
-            if reference_id["paperId"] is not None
-        ]
+        if "externalIds" in data:
+            external_ids: dict[str, str] = data["externalIds"]
+            arxiv_id = external_ids.get("ArXiv")
+            data.update({"arxiv_id": arxiv_id})
 
         # flatten openAccessPdf
-        if data["isOpenAccess"]:
-            open_access_pdf: dict[str, str] = data["openAccessPdf"]
-            open_access_pdf_url = open_access_pdf["url"]
-            open_access_pdf_status = open_access_pdf["status"]
-        else:
-            open_access_pdf_url = None
-            open_access_pdf_status = None
+        if "isOpenAccess" in data:
+            if data["isOpenAccess"]:
+                open_access_pdf: dict[str, str] = data["openAccessPdf"]
+                open_access_pdf_url = open_access_pdf["url"]
+                open_access_pdf_status = open_access_pdf["status"]
+            else:
+                open_access_pdf_url = None
+                open_access_pdf_status = None
+            data.update({"open_access_pdf_url": open_access_pdf_url, "open_access_pdf_status": open_access_pdf_status})
 
         # extract tldr text
-        tldr: dict[str, str | None] | None = data["tldr"]
-        tldr_text = tldr.get("text") if tldr is not None else None
+        if "tldr" in data:
+            tldr: dict[str, str | None] | None = data["tldr"]
+            tldr_text = tldr.get("text") if tldr is not None else None
+            data.update({"tldr_text": tldr_text})
 
-        processed_fields = {
-            "arxiv_id": arxiv_id,
-            "authors_ids": authors_ids,
-            "citations_ids": citations_ids,
-            "references_ids": references_ids,
-            "open_access_pdf_url": open_access_pdf_url,
-            "open_access_pdf_status": open_access_pdf_status,
-            "tldr_text": tldr_text,
-        }
-        return data | processed_fields
+        return data
 
 
 # TODO: cleanup
