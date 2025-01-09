@@ -174,9 +174,6 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         logger.info(
             f"There are {len(papers_ids_queue)} unseen papers at the depth {depth}. Processing..."
         )
-        # TODO (debug):
-        if depth > 1:
-            break
     return papers_metadata
 
 
