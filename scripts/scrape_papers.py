@@ -1,11 +1,11 @@
 import logging
-import time
 from collections import deque
 from datetime import date
 from itertools import batched
 from pathlib import Path
 from typing import Annotated, Any, Final, cast
 
+import pandas as pd
 import requests
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PlainValidator, model_validator
 from requests import Session
@@ -13,6 +13,7 @@ from requests.adapters import HTTPAdapter, Retry
 
 logger = logging.getLogger(__name__)
 DATA_FOLDER: Final = Path(__file__).parent.parent / "data"
+PAPERS_METADATA_PATH = DATA_FOLDER / "papers_metadata.csv"
 ARXIV_ID_PATH: Final = DATA_FOLDER / "arxiv_ids.csv"
 QUEUE_PATH: Final = DATA_FOLDER / "queue.txt"
 VISITED_PATH: Final = DATA_FOLDER / "visited.txt"
@@ -146,12 +147,10 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     def _batch_process_queue(_queue: deque[str]) -> list[PaperMetadata]:
         # TODO: it is preferable to have dynamic batch size, due to citation limits
-        delay = 10
         batch_size = 20
         _papers_metadata: list[PaperMetadata] = []
         for batch in batched(_queue, n=batch_size):
             _papers_metadata.extend(get_papers_metadata_from_semantic_scholar(list(batch)))
-            time.sleep(delay)
         return _papers_metadata
 
     papers_metadata: list[PaperMetadata] = []
@@ -182,7 +181,12 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     return papers_metadata
 
 
+def save_papers_metadata(papers_metadata: list[PaperMetadata], filepath: Path = PAPERS_METADATA_PATH) -> None:
+    papers_metadata_df = pd.DataFrame([metadata.model_dump() for metadata in papers_metadata])
+    papers_metadata_df.to_csv(filepath)
+
+
 if __name__ == "__main__":
     origin_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"  # LeanDojo
     papers_metadata = get_citations_graph(origin_paper_id)
-    print(len(papers_metadata))
+    save_papers_metadata(papers_metadata)
