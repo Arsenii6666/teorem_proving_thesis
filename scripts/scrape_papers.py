@@ -42,6 +42,7 @@ EXTRA_FIELDS: Final = [
     "tldr",  # model, text
 ]
 
+
 def custom_id_deserializer(entry: list[str] | str | list[dict[str, str | None]]) -> list[str]:
     if isinstance(entry, list):
         if all(isinstance(idx, str) for idx in entry):
@@ -58,7 +59,12 @@ def custom_id_deserializer(entry: list[str] | str | list[dict[str, str | None]])
     return ids
 
 
-SerializableStrList = Annotated[list[str], PlainSerializer(lambda x: ",".join(x)), PlainValidator(custom_id_deserializer)]
+SerializableStrList = Annotated[
+    list[str],
+    PlainSerializer(lambda x: ",".join(x)),
+    PlainValidator(custom_id_deserializer),
+]
+
 
 class PaperMetadata(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -96,7 +102,12 @@ class PaperMetadata(BaseModel):
             else:
                 open_access_pdf_url = None
                 open_access_pdf_status = None
-            data.update({"open_access_pdf_url": open_access_pdf_url, "open_access_pdf_status": open_access_pdf_status})
+            data.update(
+                {
+                    "open_access_pdf_url": open_access_pdf_url,
+                    "open_access_pdf_status": open_access_pdf_status,
+                }
+            )
 
         # extract tldr text
         if "tldr" in data:
