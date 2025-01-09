@@ -169,10 +169,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             for paper_metadata in papers_metadata_batch
             for citation_id in paper_metadata.citations_ids
         }
-        # TODO: can both differences be done at once?
-        new_papers_ids = candidate_papers_ids.difference(processed_papers_ids).difference(
-            papers_ids_queue
-        )
+        new_papers_ids = candidate_papers_ids - processed_papers_ids - set(papers_ids_queue)
         papers_ids_queue = deque(new_papers_ids)
         depth += 1
         # TODO: better informing
