@@ -4,11 +4,10 @@ from collections import deque
 from datetime import date
 from itertools import batched
 from pathlib import Path
-from typing import Any, Annotated, Final, cast
-
+from typing import Annotated, Any, Final, cast
 
 import requests
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, model_validator, PlainValidator
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PlainValidator, model_validator
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 
