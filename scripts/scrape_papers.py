@@ -157,6 +157,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     papers_ids_queue = deque([origin_paper_id])
     depth = 0
     while papers_ids_queue:
+        logger.info(f"Processing {len(papers_ids_queue)} papers at depth {depth}")
         papers_metadata_batch = _batch_process_queue(papers_ids_queue)
         processed_papers_ids.update(
             paper_metadata.paper_id for paper_metadata in papers_metadata_batch
@@ -170,10 +171,6 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         new_papers_ids = candidate_papers_ids - processed_papers_ids - set(papers_ids_queue)
         papers_ids_queue = deque(new_papers_ids)
         depth += 1
-        # TODO: better informing
-        logger.info(
-            f"There are {len(papers_ids_queue)} unseen papers at the depth {depth}. Processing..."
-        )
     return papers_metadata
 
 
