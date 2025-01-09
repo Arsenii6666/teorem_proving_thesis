@@ -1,18 +1,15 @@
 import logging
 import time
 from collections import deque
+from datetime import date
 from itertools import batched
 from pathlib import Path
-from typing import Final
-from datetime import date
+from typing import Any, Final
 
-import pandas as pd
 import requests
+from pydantic import BaseModel, Field, model_validator
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
-from pydantic import BaseModel, Field, model_validator
-
-from typing import Any
 
 logger = logging.getLogger(__name__)
 DATA_FOLDER: Final = Path(__file__).parent.parent / "data"
@@ -137,7 +134,7 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
         papers_metadata = [PaperMetadata(**entry) for entry in data]
         return papers_metadata
     if response.status_code == requests.codes.TOO_MANY_REQUESTS:
-        logger.error(f"Rate limit exceeded. Exiting.")
+        logger.error("Rate limit exceeded. Exiting.")
         return []
     logger.error(f"Error: {response.status_code}.")
     return []
