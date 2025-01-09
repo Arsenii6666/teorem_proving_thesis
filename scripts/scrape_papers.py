@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 from collections import deque
-from datetime import date
+from datetime import date, datetime
 from itertools import batched
 from pathlib import Path
 from typing import Annotated, Any, Final, cast
@@ -81,6 +81,10 @@ class PaperMetadata(BaseModel):
     open_access_pdf_url: str | None
     open_access_pdf_status: str | None
     tldr_text: str | None
+
+    # timestamp when it has been retrieved from Semantic Scholar
+    # so that we know when our local db gets outdated
+    retrieval_time: datetime = Field(default_factory=datetime.now)
 
     @model_validator(mode="before")
     @classmethod
