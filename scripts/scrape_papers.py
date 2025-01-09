@@ -143,6 +143,12 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
 
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
+    def _fetch_from_local(_paper_ids: list[str]) -> tuple[list[PaperMetadata], list[str]]:
+        _papers_metadata = []
+        _remaining_papers_ids = []
+        # TODO: implement
+        return _papers_metadata, _remaining_papers_ids
+
     def _batch_fetch_from_semantic_scholar(_papers_ids: list[str]) -> list[PaperMetadata]:
         # TODO: it is preferable to have dynamic batch size, due to citation limits (9999)
         batch_size = 200
@@ -154,7 +160,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             save_papers_metadata_to_db(_papers_metadata_batch)
         return _papers_metadata
 
-    known_paper_metadata_df = read_papers_metadata_from_db()
+    known_papers_metadata_df = read_papers_metadata_from_db()
 
     papers_metadata: list[PaperMetadata] = []
     processed_papers_ids: set[str] = set()
@@ -162,18 +168,14 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     depth = 0
     while papers_ids:
         logger.info(f"Processing {len(papers_ids)} papers at depth {depth}")
-        # TODO: fetch from df first
-
-
-
-        papers_metadata_from_queue = _batch_fetch_from_semantic_scholar(papers_ids)
-        processed_papers_ids.update(
-            paper_metadata.paper_id for paper_metadata in papers_metadata_from_queue
-        )
-        papers_metadata.extend(papers_metadata_from_queue)
+        papers_metadata_from_local, remaining_papers_ids = _fetch_from_local(papers_ids)
+        papers_metadata_from_semantic_scholar = _batch_fetch_from_semantic_scholar(remaining_papers_ids)
+        papers_metadata_at_depth = papers_metadata_from_local + papers_metadata_from_semantic_scholar
+        processed_papers_ids.update(paper_metadata.paper_id for paper_metadata in papers_metadata_at_depth)
+        papers_metadata.extend(papers_metadata_at_depth)
         candidate_papers_ids = {
             citation_id
-            for paper_metadata in papers_metadata_from_queue
+            for paper_metadata in papers_metadata_at_depth
             for citation_id in paper_metadata.citations_ids
         }
 
