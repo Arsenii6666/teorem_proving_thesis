@@ -155,12 +155,18 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             save_papers_metadata_to_db(_papers_metadata_batch)
         return _papers_metadata
 
+    known_paper_metadata_df = read_papers_metadata_from_db()
+
     papers_metadata: list[PaperMetadata] = []
     processed_papers_ids: set[str] = set()
     papers_ids_queue = deque([origin_paper_id])
     depth = 0
     while papers_ids_queue:
         logger.info(f"Processing {len(papers_ids_queue)} papers at depth {depth}")
+        # TODO: fetch from df first
+
+
+
         papers_metadata_from_queue = _batch_process_queue(papers_ids_queue)
         processed_papers_ids.update(
             paper_metadata.paper_id for paper_metadata in papers_metadata_from_queue
