@@ -18,11 +18,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 DATA_FOLDER: Final = Path(__file__).parent.parent / "data"
-PAPERS_METADATA_PATH = DATA_FOLDER / "papers_metadata.csv"
 PAPERS_METADATA_DB_PATH = DATA_FOLDER / "papers_metadata.db"
-ARXIV_ID_PATH: Final = DATA_FOLDER / "arxiv_ids.csv"
-QUEUE_PATH: Final = DATA_FOLDER / "queue.txt"
-VISITED_PATH: Final = DATA_FOLDER / "visited.txt"
 
 
 EXTRA_FIELDS: Final = [
@@ -81,7 +77,6 @@ class PaperMetadata(BaseModel):
     open_access_pdf_url: str | None
     open_access_pdf_status: str | None
     tldr_text: str | None
-
     # timestamp when it has been retrieved from Semantic Scholar
     # so that we know when our local db gets outdated
     retrieval_time: datetime = Field(default_factory=datetime.now)
