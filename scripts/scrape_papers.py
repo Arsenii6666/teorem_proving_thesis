@@ -149,7 +149,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         # TODO: implement
         return _papers_metadata, _remaining_papers_ids
 
-    def _batch_fetch_from_semantic_scholar(_papers_ids: list[str]) -> list[PaperMetadata]:
+    def _fetch_from_semantic_scholar(_papers_ids: list[str]) -> list[PaperMetadata]:
         # TODO: it is preferable to have dynamic batch size, due to citation limits (9999)
         batch_size = 200
         _papers_metadata: list[PaperMetadata] = []
@@ -169,7 +169,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     while papers_ids:
         logger.info(f"Processing {len(papers_ids)} papers at depth {depth}")
         papers_metadata_from_local, remaining_papers_ids = _fetch_from_local(papers_ids)
-        papers_metadata_from_semantic_scholar = _batch_fetch_from_semantic_scholar(remaining_papers_ids)
+        papers_metadata_from_semantic_scholar = _fetch_from_semantic_scholar(remaining_papers_ids)
         papers_metadata_at_depth = papers_metadata_from_local + papers_metadata_from_semantic_scholar
         processed_papers_ids.update(paper_metadata.paper_id for paper_metadata in papers_metadata_at_depth)
         papers_metadata.extend(papers_metadata_at_depth)
