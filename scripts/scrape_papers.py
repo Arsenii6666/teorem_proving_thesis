@@ -171,6 +171,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             for paper_metadata in papers_metadata_from_queue
             for citation_id in paper_metadata.citations_ids
         }
+
         new_papers_ids = candidate_papers_ids - processed_papers_ids - set(papers_ids_queue)
         papers_ids_queue = deque(new_papers_ids)
         depth += 1
@@ -184,6 +185,19 @@ def save_papers_metadata_to_db(papers_metadata: list[PaperMetadata]) -> None:
     papers_metadata_df = pd.DataFrame([metadata.model_dump() for metadata in papers_metadata])
     with sqlite3.connect(PAPERS_METADATA_DB_PATH) as conn:
         papers_metadata_df.to_sql("papers_metadata", con=conn, if_exists="append", index=False)
+
+
+def read_papers_metadata_from_db() -> pd.DataFrame:
+    try:
+        with sqlite3.connect(PAPERS_METADATA_DB_PATH) as conn:
+            papers_metadata_df = pd.read_sql_query("SELECT * FROM papers_metadata;", con=conn)
+    except pd.errors.DatabaseError as e:
+        if "no such table: papers_metadata" in str(e):
+            # when starting from scratch
+            papers_metadata_df = pd.DataFrame(columns=list(PaperMetadata.model_fields))
+        else:
+            raise
+    return papers_metadata_df
 
 
 if __name__ == "__main__":
