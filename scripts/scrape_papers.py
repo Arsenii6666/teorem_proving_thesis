@@ -1,6 +1,5 @@
 import logging
 import sqlite3
-from collections import deque
 from datetime import date, datetime
 from itertools import batched
 from pathlib import Path
@@ -144,11 +143,11 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
 
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
-    def _batch_process_queue(_papers_ids_queue: deque[str]) -> list[PaperMetadata]:
+    def _batch_process_queue(_papers_ids: list[str]) -> list[PaperMetadata]:
         # TODO: it is preferable to have dynamic batch size, due to citation limits (9999)
         batch_size = 200
         _papers_metadata: list[PaperMetadata] = []
-        for papers_ids in batched(tqdm(_papers_ids_queue), n=batch_size):
+        for papers_ids in batched(tqdm(_papers_ids), n=batch_size):
             _papers_metadata_batch = get_papers_metadata_from_semantic_scholar(list(papers_ids))
             _papers_metadata.extend(_papers_metadata_batch)
             # TODO: ensure that queue only has ids that are not yet in db
@@ -159,15 +158,15 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
 
     papers_metadata: list[PaperMetadata] = []
     processed_papers_ids: set[str] = set()
-    papers_ids_queue = deque([origin_paper_id])
+    papers_ids = [origin_paper_id]
     depth = 0
-    while papers_ids_queue:
-        logger.info(f"Processing {len(papers_ids_queue)} papers at depth {depth}")
+    while papers_ids:
+        logger.info(f"Processing {len(papers_ids)} papers at depth {depth}")
         # TODO: fetch from df first
 
 
 
-        papers_metadata_from_queue = _batch_process_queue(papers_ids_queue)
+        papers_metadata_from_queue = _batch_process_queue(papers_ids)
         processed_papers_ids.update(
             paper_metadata.paper_id for paper_metadata in papers_metadata_from_queue
         )
@@ -178,8 +177,8 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             for citation_id in paper_metadata.citations_ids
         }
 
-        new_papers_ids = candidate_papers_ids - processed_papers_ids - set(papers_ids_queue)
-        papers_ids_queue = deque(new_papers_ids)
+        new_papers_ids = candidate_papers_ids - processed_papers_ids - set(papers_ids)
+        papers_ids = list(new_papers_ids)
         depth += 1
         # TODO: debug
         if depth > 2:
