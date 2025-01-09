@@ -60,7 +60,7 @@ class PaperMetadata(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def preprocess(cls, data: dict[str, Any]):
+    def preprocess(cls, data: dict[str, Any]) -> dict[str, Any]:
         # extract arxiv_id
         external_ids: dict[str, str] = data["externalIds"]
         arxiv_id = external_ids.get("ArXiv")
