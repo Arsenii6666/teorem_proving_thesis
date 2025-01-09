@@ -140,8 +140,7 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
         data = response.json()
         papers_metadata = [PaperMetadata(**entry) for entry in data]
         return papers_metadata
-    else:
-        raise RuntimeError(f"Retrieval failed with code: {response.status_code}")
+    raise RuntimeError(f"Retrieval failed with code: {response.status_code}")
 
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
@@ -181,7 +180,9 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     return papers_metadata
 
 
-def save_papers_metadata(papers_metadata: list[PaperMetadata], filepath: Path = PAPERS_METADATA_PATH) -> None:
+def save_papers_metadata(
+    papers_metadata: list[PaperMetadata], filepath: Path = PAPERS_METADATA_PATH
+) -> None:
     papers_metadata_df = pd.DataFrame([metadata.model_dump() for metadata in papers_metadata])
     papers_metadata_df.to_csv(filepath)
 
