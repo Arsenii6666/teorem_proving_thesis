@@ -143,7 +143,7 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
 
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
-    def _batch_process_queue(_papers_ids: list[str]) -> list[PaperMetadata]:
+    def _batch_fetch_from_semantic_scholar(_papers_ids: list[str]) -> list[PaperMetadata]:
         # TODO: it is preferable to have dynamic batch size, due to citation limits (9999)
         batch_size = 200
         _papers_metadata: list[PaperMetadata] = []
@@ -166,7 +166,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
 
 
 
-        papers_metadata_from_queue = _batch_process_queue(papers_ids)
+        papers_metadata_from_queue = _batch_fetch_from_semantic_scholar(papers_ids)
         processed_papers_ids.update(
             paper_metadata.paper_id for paper_metadata in papers_metadata_from_queue
         )
