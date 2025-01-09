@@ -175,7 +175,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         papers_ids_queue = deque(new_papers_ids)
         depth += 1
         # TODO: debug
-        if depth > 1:
+        if depth > 2:
             break
     return papers_metadata
 
@@ -183,7 +183,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
 def save_papers_metadata_to_db(papers_metadata: list[PaperMetadata]) -> None:
     papers_metadata_df = pd.DataFrame([metadata.model_dump() for metadata in papers_metadata])
     with sqlite3.connect(PAPERS_METADATA_DB_PATH) as conn:
-        papers_metadata_df.to_sql("papers_metadata", con=conn, if_exists="append")
+        papers_metadata_df.to_sql("papers_metadata", con=conn, if_exists="append", index=False)
 
 
 if __name__ == "__main__":
