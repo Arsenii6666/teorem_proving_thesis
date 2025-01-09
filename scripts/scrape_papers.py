@@ -90,8 +90,8 @@ class PaperMetadata(BaseModel):
             data.update({"arxiv_id": arxiv_id})
 
         # flatten openAccessPdf
-        if "isOpenAccess" in data:
-            if data["isOpenAccess"]:
+        if "openAccessPdf" in data:
+            if data["openAccessPdf"]:
                 open_access_pdf: dict[str, str] = data["openAccessPdf"]
                 open_access_pdf_url = open_access_pdf["url"]
                 open_access_pdf_status = open_access_pdf["status"]
