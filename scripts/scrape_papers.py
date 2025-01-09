@@ -40,8 +40,8 @@ EXTRA_FIELDS: Final = [
     "publicationDate",
     "influentialCitationCount",
     "isOpenAccess",
-    "openAccessPdf", # url, status
-    "tldr", # model, text
+    "openAccessPdf",  # url, status
+    "tldr",  # model, text
 ]
 
 
@@ -70,15 +70,25 @@ class PaperMetadata(BaseModel):
 
         # flatten authors
         authors: list[dict[str, str | None]] = data["authors"]
-        authors_ids: list[str] = [author_id["authorId"] for author_id in authors if author_id["authorId"] is not None]
+        authors_ids: list[str] = [
+            author_id["authorId"] for author_id in authors if author_id["authorId"] is not None
+        ]
 
         # flatten citations
         citations: list[dict[str, str | None]] = data["citations"]
-        citations_ids = [citation_id["paperId"] for citation_id in citations if citation_id["paperId"] is not None]
+        citations_ids = [
+            citation_id["paperId"]
+            for citation_id in citations
+            if citation_id["paperId"] is not None
+        ]
 
         # flatten references
         references: list[dict[str, str | None]] = data["references"]
-        references_ids = [reference_id["paperId"] for reference_id in references if reference_id["paperId"] is not None]
+        references_ids = [
+            reference_id["paperId"]
+            for reference_id in references
+            if reference_id["paperId"] is not None
+        ]
 
         # flatten openAccessPdf
         if data["isOpenAccess"]:
@@ -93,14 +103,15 @@ class PaperMetadata(BaseModel):
         tldr: dict[str, str | None] | None = data["tldr"]
         tldr_text = tldr.get("text") if tldr is not None else None
 
-        processed_fields = {"arxiv_id": arxiv_id,
-                       "authors_ids": authors_ids,
-                       "citations_ids": citations_ids,
-                       "references_ids": references_ids,
-                       "open_access_pdf_url": open_access_pdf_url,
-                       "open_access_pdf_status": open_access_pdf_status,
-                       "tldr_text": tldr_text,
-                       }
+        processed_fields = {
+            "arxiv_id": arxiv_id,
+            "authors_ids": authors_ids,
+            "citations_ids": citations_ids,
+            "references_ids": references_ids,
+            "open_access_pdf_url": open_access_pdf_url,
+            "open_access_pdf_status": open_access_pdf_status,
+            "tldr_text": tldr_text,
+        }
         return data | processed_fields
 
 
@@ -115,7 +126,12 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
             raise_on_status=False,
         )
         session.mount("https://", HTTPAdapter(max_retries=retries))
-        response = session.post(batch_endpoint, params={"fields": ",".join(EXTRA_FIELDS)}, json={"ids": paper_ids}, timeout=10)
+        response = session.post(
+            batch_endpoint,
+            params={"fields": ",".join(EXTRA_FIELDS)},
+            json={"ids": paper_ids},
+            timeout=10,
+        )
     if response.status_code == requests.codes.OK:
         data = response.json()
         papers_metadata = [PaperMetadata(**entry) for entry in data]
@@ -144,13 +160,23 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     depth = 0
     while papers_ids_queue:
         papers_metadata_batch = _batch_process_queue(papers_ids_queue)
-        processed_papers_ids.update(paper_metadata.paper_id for paper_metadata in papers_metadata_batch)
+        processed_papers_ids.update(
+            paper_metadata.paper_id for paper_metadata in papers_metadata_batch
+        )
         papers_metadata.extend(papers_metadata_batch)
-        candidate_papers_ids = {citation_id for paper_metadata in papers_metadata_batch for citation_id in paper_metadata.citations_ids}
-        new_papers_ids = candidate_papers_ids.difference(processed_papers_ids).difference(papers_ids_queue)
+        candidate_papers_ids = {
+            citation_id
+            for paper_metadata in papers_metadata_batch
+            for citation_id in paper_metadata.citations_ids
+        }
+        new_papers_ids = candidate_papers_ids.difference(processed_papers_ids).difference(
+            papers_ids_queue
+        )
         papers_ids_queue = deque(new_papers_ids)
         depth += 1
-        logger.info(f"There are {len(papers_ids_queue)} unseen papers at the depth {depth}. Processing...")
+        logger.info(
+            f"There are {len(papers_ids_queue)} unseen papers at the depth {depth}. Processing..."
+        )
         # TODO (debug):
         if depth > 1:
             break
