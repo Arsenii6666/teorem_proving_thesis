@@ -13,6 +13,7 @@ dependencies = [
     "pandas",
     "requests",
     "pydantic",
+    "tqdm",
 ]
 
 [project.optional-dependencies]

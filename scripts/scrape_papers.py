@@ -4,6 +4,7 @@ from datetime import date
 from itertools import batched
 from pathlib import Path
 from typing import Annotated, Any, Final, cast
+from tqdm.auto import tqdm
 
 import pandas as pd
 import requests
@@ -11,7 +12,10 @@ from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, PlainValidat
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 
+logging.basicConfig()
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 DATA_FOLDER: Final = Path(__file__).parent.parent / "data"
 PAPERS_METADATA_PATH = DATA_FOLDER / "papers_metadata.csv"
 ARXIV_ID_PATH: Final = DATA_FOLDER / "arxiv_ids.csv"
@@ -148,7 +152,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         # TODO: it is preferable to have dynamic batch size, due to citation limits
         batch_size = 20
         _papers_metadata: list[PaperMetadata] = []
-        for batch in batched(_queue, n=batch_size):
+        for batch in batched(tqdm(_queue), n=batch_size):
             _papers_metadata.extend(get_papers_metadata_from_semantic_scholar(list(batch)))
         return _papers_metadata
 
