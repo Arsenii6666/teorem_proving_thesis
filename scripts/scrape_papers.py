@@ -23,14 +23,6 @@ QUEUE_PATH: Final = DATA_FOLDER / "queue.txt"
 VISITED_PATH: Final = DATA_FOLDER / "visited.txt"
 
 
-# renamed: Paper -> PaperMetadata (to be more precise)
-# switched: dataclasses -> pydantic (pydantic has field aliases)
-## Semantic Scholar endpoint response is much richer than "citations", so fields have to be updated
-## used datamodel-code-generator to generate fields from example json:
-### datamodel-codegen --input data/lean_dojo.json --input-file-type json --output scripts/paper_metadata_model_autogen.py
-
-# https://api.semanticscholar.org/api-docs/#tag/Paper-Data/operation/post_graph_get_papers
-
 EXTRA_FIELDS: Final = [
     "title",
     "externalIds",
@@ -124,8 +116,10 @@ class PaperMetadata(BaseModel):
 
 # TODO: cleanup
 def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[PaperMetadata]:
+    # https://api.semanticscholar.org/api-docs/#tag/Paper-Data/operation/post_graph_get_papers
     batch_endpoint = "https://api.semanticscholar.org/graph/v1/paper/batch"
     with Session() as session:
+        # Semantic Scholar asks to be considerate and use exponential backoff
         retries = Retry(
             total=15,
             backoff_factor=5.0,
@@ -149,7 +143,7 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     def _batch_process_queue(_queue: deque[str]) -> list[PaperMetadata]:
-        # TODO: it is preferable to have dynamic batch size, due to citation limits
+        # TODO: it is preferable to have dynamic batch size, due to citation limits (9999)
         batch_size = 20
         _papers_metadata: list[PaperMetadata] = []
         for batch in batched(tqdm(_queue), n=batch_size):
