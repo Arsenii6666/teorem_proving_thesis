@@ -199,8 +199,8 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     return papers_metadata
 
 
-def save_papers_metadata_to_db(papers_metadata: list[PaperMetadata]) -> None:
-    papers_metadata_df = pd.DataFrame([metadata.model_dump() for metadata in papers_metadata])
+def save_papers_metadata_to_db(_papers_metadata: list[PaperMetadata]) -> None:
+    papers_metadata_df = pd.DataFrame([metadata.model_dump() for metadata in _papers_metadata])
     with sqlite3.connect(PAPERS_METADATA_DB_PATH) as conn:
         papers_metadata_df.to_sql("papers_metadata", con=conn, if_exists="append", index=False)
 
@@ -221,4 +221,3 @@ def read_papers_metadata_from_db() -> pd.DataFrame:
 if __name__ == "__main__":
     origin_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"  # LeanDojo
     papers_metadata = get_citations_graph(origin_paper_id)
-    save_papers_metadata_to_db(papers_metadata)
