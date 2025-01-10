@@ -140,7 +140,7 @@ def get_papers_metadata_from_semantic_scholar(papers_ids: list[str]) -> list[Pap
     raise RuntimeError(f"Retrieval failed with code: {response.status_code}")
 
 
-def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
+def get_citations_graph(origin_paper_id: str, banned_words: list[str], banned_paper_ids: set[str], depth_limit: int = 10) -> list[PaperMetadata]:
     def _fetch_from_local(_papers_ids: list[str]) -> tuple[list[PaperMetadata], list[str]]:
         local_paper_ids: set[str] = set(known_papers_metadata_df.paper_id.values)
         _to_retrieve_papers_ids = local_paper_ids.intersection(_papers_ids)
@@ -149,6 +149,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         _papers_metadata_df: pd.DataFrame = known_papers_metadata_df.loc[
             known_papers_metadata_df.paper_id.isin(_to_retrieve_papers_ids)
         ]
+        _papers_metadata_df = _papers_metadata_df.loc[~_papers_metadata_df.title.str.contains(banned_pattern, case=False)]
         _papers_metadata = [
             PaperMetadata(**cast(dict[str, Any], record))
             for record in _papers_metadata_df.to_dict(orient="records")
@@ -162,12 +163,19 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         _papers_metadata: list[PaperMetadata] = []
         for papers_ids in batched(tqdm(_papers_ids), n=batch_size):
             _papers_metadata_batch = get_papers_metadata_from_semantic_scholar(list(papers_ids))
+            # TODO: rethink this detour
+            _papers_metadata_df = pd.DataFrame([metadata.model_dump() for metadata in _papers_metadata_batch])
+            _papers_metadata_df = _papers_metadata_df.loc[~_papers_metadata_df.title.str.contains(banned_pattern, case=False)]
+            _papers_metadata_batch = [
+                PaperMetadata(**cast(dict[str, Any], record))
+                for record in _papers_metadata_df.to_dict(orient="records")
+            ]
             _papers_metadata.extend(_papers_metadata_batch)
-            # TODO: ensure that queue only has ids that are not yet in db
             save_papers_metadata_to_db(_papers_metadata_batch)
         return _papers_metadata
 
     known_papers_metadata_df = read_papers_metadata_from_db()
+    banned_pattern = "|".join(banned_words)  # OR for regex
 
     papers_metadata: list[PaperMetadata] = []
     processed_papers_ids: set[str] = set()
@@ -191,8 +199,10 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             if citation_id
         }
 
-        papers_ids = list(candidate_papers_ids - processed_papers_ids)
+        papers_ids = list(candidate_papers_ids - processed_papers_ids - banned_paper_ids)
         depth += 1
+        if depth > depth_limit:
+            break
     return papers_metadata
 
 
@@ -216,5 +226,19 @@ def read_papers_metadata_from_db() -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    origin_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"  # LeanDojo
-    papers_metadata = get_citations_graph(origin_paper_id)
+    leandojo_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"
+
+    # 6a4501fefaf73261dc180ff86b52208679f3fb9c - A Survey on Deep Learning for Theorem Proving
+    # 5ee871537ae51e7e2e93d2a70fff5d100649a655 - Mathematical Language Models: A Survey
+
+    # we'd like to avoid surveys as they over-broaden retrieval space (especially highly cited ones)
+    banned_words = ["survey", "overview"]
+
+    # not relevant for us here, but highly-cited
+    banned_paper_ids = {
+        "411114f989a3d1083d90afd265103132fee94ebe",  # Mixtral of Experts (references Llemma in list of literature, but never in main teext, weird)
+        "4c8cc2383cec93bd9ea0758692f01b98a035215b",  # UltraFeedback: Boosting Language Models with High-quality Feedback
+        "560c6f24c335c2dd27be0cfa50dbdbb50a9e4bfd",  # TinyLlama: An Open-Source Small Language Model
+    }
+
+    papers_metadata = get_citations_graph(leandojo_paper_id, banned_words, banned_paper_ids)
