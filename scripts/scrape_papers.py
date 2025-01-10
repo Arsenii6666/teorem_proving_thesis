@@ -120,12 +120,10 @@ def get_papers_metadata_from_semantic_scholar(papers_ids: list[str]) -> list[Pap
     batch_endpoint = "https://api.semanticscholar.org/graph/v1/paper/batch"
     with Session() as session:
         # Semantic Scholar asks to be considerate and use exponential backoff
-        session.hooks["response"] = lambda r, *_, **__: r.raise_for_status()
         retries = Retry(
             total=15,
             backoff_factor=10.0,
             status_forcelist=[429, 500, 502, 503, 504],
-            raise_on_status=False,
         )
         session.mount("http://", HTTPAdapter(max_retries=retries))
         session.mount("https://", HTTPAdapter(max_retries=retries))
@@ -137,7 +135,7 @@ def get_papers_metadata_from_semantic_scholar(papers_ids: list[str]) -> list[Pap
         )
     if response.status_code == requests.codes.OK:
         data = response.json()
-        papers_metadata = [PaperMetadata(**entry) for entry in data]
+        papers_metadata = [PaperMetadata(**entry) for entry in data if entry is not None]
         return papers_metadata
     raise RuntimeError(f"Retrieval failed with code: {response.status_code}")
 
