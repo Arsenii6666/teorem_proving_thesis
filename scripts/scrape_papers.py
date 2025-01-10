@@ -143,9 +143,13 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
 
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
-    def _fetch_from_local(_paper_ids: list[str]) -> tuple[list[PaperMetadata], list[str]]:
+    def _fetch_from_local(_papers_ids: list[str]) -> tuple[list[PaperMetadata], list[str]]:
         _papers_metadata = []
-        _remaining_papers_ids = []
+        _remaining_papers_ids = _papers_ids # []
+
+        # known_papers_metadata_df.paper_id.isin()
+        # for paper_id in _papers_ids:
+        #     if
         # TODO: implement
         return _papers_metadata, _remaining_papers_ids
 
