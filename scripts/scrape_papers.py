@@ -152,7 +152,8 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             known_papers_metadata_df.paper_id.isin(_to_retrieve_papers_ids)
         ]
         _papers_metadata = [
-            PaperMetadata(**record) for record in _papers_metadata_df.to_dict(orient="records")
+            PaperMetadata(**cast(dict[str, Any], record))
+            for record in _papers_metadata_df.to_dict(orient="records")
         ]
 
         return _papers_metadata, _remaining_papers_ids
@@ -194,9 +195,6 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
 
         papers_ids = list(candidate_papers_ids - processed_papers_ids)
         depth += 1
-        # TODO: debug
-        if depth > 2:
-            break
     return papers_metadata
 
 
@@ -222,4 +220,3 @@ def read_papers_metadata_from_db() -> pd.DataFrame:
 if __name__ == "__main__":
     origin_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"  # LeanDojo
     papers_metadata = get_citations_graph(origin_paper_id)
-    print(len(papers_metadata))
