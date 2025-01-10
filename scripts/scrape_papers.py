@@ -40,7 +40,7 @@ def custom_id_deserializer(entry: list[str] | str | list[dict[str, str | None]])
     if isinstance(entry, list):
         if all(isinstance(idx, dict) for idx in entry):
             entry = cast(list[dict[str, str | None]], entry)
-            ids: list[str] = [value for d in entry if (value := next(iter(d.values()))) is not None]
+            ids: list[str] = [value for d in entry if (value := next(iter(d.values())))]
         elif all(isinstance(idx, str) for idx in entry):
             ids = cast(list[str], entry)
         else:
@@ -189,6 +189,7 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
             citation_id
             for paper_metadata in papers_metadata_at_depth
             for citation_id in paper_metadata.citations_ids
+            if citation_id
         }
 
         papers_ids = list(candidate_papers_ids - processed_papers_ids)
@@ -221,3 +222,4 @@ def read_papers_metadata_from_db() -> pd.DataFrame:
 if __name__ == "__main__":
     origin_paper_id = "87875a07976c26f82705de1fc70041169e5d652b"  # LeanDojo
     papers_metadata = get_citations_graph(origin_paper_id)
+    print(len(papers_metadata))
