@@ -148,8 +148,12 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         _to_retrieve_papers_ids = local_paper_ids.intersection(_papers_ids)
         _remaining_papers_ids = list(set(_papers_ids) - _to_retrieve_papers_ids)
 
-        _papers_metadata_df: pd.DataFrame = known_papers_metadata_df.loc[known_papers_metadata_df.paper_id.isin(_to_retrieve_papers_ids)]
-        _papers_metadata = [PaperMetadata(**record) for record in _papers_metadata_df.to_dict(orient="records")]
+        _papers_metadata_df: pd.DataFrame = known_papers_metadata_df.loc[
+            known_papers_metadata_df.paper_id.isin(_to_retrieve_papers_ids)
+        ]
+        _papers_metadata = [
+            PaperMetadata(**record) for record in _papers_metadata_df.to_dict(orient="records")
+        ]
 
         return _papers_metadata, _remaining_papers_ids
 
@@ -174,8 +178,12 @@ def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
         logger.info(f"Processing {len(papers_ids)} papers at depth {depth}")
         papers_metadata_from_local, remaining_papers_ids = _fetch_from_local(papers_ids)
         papers_metadata_from_semantic_scholar = _fetch_from_semantic_scholar(remaining_papers_ids)
-        papers_metadata_at_depth = papers_metadata_from_local + papers_metadata_from_semantic_scholar
-        processed_papers_ids.update(paper_metadata.paper_id for paper_metadata in papers_metadata_at_depth)
+        papers_metadata_at_depth = (
+            papers_metadata_from_local + papers_metadata_from_semantic_scholar
+        )
+        processed_papers_ids.update(
+            paper_metadata.paper_id for paper_metadata in papers_metadata_at_depth
+        )
         papers_metadata.extend(papers_metadata_at_depth)
         candidate_papers_ids = {
             citation_id
