@@ -115,7 +115,7 @@ class PaperMetadata(BaseModel):
 
 
 # TODO: cleanup
-def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[PaperMetadata]:
+def get_papers_metadata_from_semantic_scholar(papers_ids: list[str]) -> list[PaperMetadata]:
     # https://api.semanticscholar.org/api-docs/#tag/Paper-Data/operation/post_graph_get_papers
     batch_endpoint = "https://api.semanticscholar.org/graph/v1/paper/batch"
     with Session() as session:
@@ -132,7 +132,7 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
         response = session.post(
             batch_endpoint,
             params={"fields": ",".join(EXTRA_FIELDS)},
-            json={"ids": paper_ids},
+            json={"ids": papers_ids},
             timeout=60,
         )
     if response.status_code == requests.codes.OK:
@@ -144,13 +144,13 @@ def get_papers_metadata_from_semantic_scholar(paper_ids: list[str]) -> list[Pape
 
 def get_citations_graph(origin_paper_id: str) -> list[PaperMetadata]:
     def _fetch_from_local(_papers_ids: list[str]) -> tuple[list[PaperMetadata], list[str]]:
-        _papers_metadata = []
-        _remaining_papers_ids = _papers_ids # []
+        local_paper_ids: set[str] = set(known_papers_metadata_df.paper_id.values)
+        _to_retrieve_papers_ids = local_paper_ids.intersection(_papers_ids)
+        _remaining_papers_ids = list(set(_papers_ids) - _to_retrieve_papers_ids)
 
-        # known_papers_metadata_df.paper_id.isin()
-        # for paper_id in _papers_ids:
-        #     if
-        # TODO: implement
+        _papers_metadata_df: pd.DataFrame = known_papers_metadata_df.loc[known_papers_metadata_df.paper_id.isin(_to_retrieve_papers_ids)]
+        _papers_metadata = [PaperMetadata(**record) for record in _papers_metadata_df.to_dict(orient="records")]
+
         return _papers_metadata, _remaining_papers_ids
 
     def _fetch_from_semantic_scholar(_papers_ids: list[str]) -> list[PaperMetadata]:
