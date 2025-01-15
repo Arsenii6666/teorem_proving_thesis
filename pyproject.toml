@@ -10,10 +10,10 @@ name = "thesis"
 version = '0.0.1'
 requires-python = ">= 3.11"
 dependencies = [
-    "numpy",
     "pandas",
     "requests",
-    "scipy",
+    "pydantic",
+    "tqdm",
 ]
 
 [project.optional-dependencies]
