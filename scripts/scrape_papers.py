@@ -23,6 +23,7 @@ PAPERS_METADATA_DB_PATH = DATA_FOLDER / "papers_metadata.db"
 EXTRA_FIELDS: Final = [
     "title",
     "externalIds",
+    "s2FieldsOfStudy",  # human supplied + model decided
     "authors.authorId",
     "citationCount",
     "referenceCount",
@@ -65,6 +66,7 @@ class PaperMetadata(BaseModel):
     paper_id: str = Field(alias="paperId")
     title: str
     arxiv_id: str | None  # from externalIds
+    fields_of_study: SerializableStrList = Field(alias="fieldsOfStudy")
     authors_ids: SerializableStrList = Field(alias="authors")
     citation_count: int = Field(alias="citationCount")
     reference_count: int = Field(alias="referenceCount")
@@ -83,6 +85,11 @@ class PaperMetadata(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def preprocess(cls, data: dict[str, Any]) -> dict[str, Any]:
+        # extract s2FieldsOfStudy
+        if "s2FieldsOfStudy" in data:
+            fields_of_study: list[str] = sorted(list({field["category"] for field in data["s2FieldsOfStudy"]}))
+            data.update({"fields_of_study": fields_of_study})
+
         # extract arxiv_id
         if "externalIds" in data:
             external_ids: dict[str, str] = data["externalIds"]
@@ -241,4 +248,4 @@ if __name__ == "__main__":
         "560c6f24c335c2dd27be0cfa50dbdbb50a9e4bfd",  # TinyLlama: An Open-Source Small Language Model
     }
 
-    papers_metadata = get_citations_graph(leandojo_paper_id, banned_words, banned_paper_ids)
+    papers_metadata = get_citations_graph(leandojo_paper_id, banned_words, banned_paper_ids, depth_limit=1)
